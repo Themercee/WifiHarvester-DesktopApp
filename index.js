@@ -4,7 +4,7 @@ const electron = require('electron');
 const ipcMain = require('electron').ipcMain;
 var parseString = require('xml2js').parseString;
 var debug = require('debug')('index');
-var kismetAnalyser = require('./kismetAnalyser');
+var wifiLogAnalyser = require('./wifiLogAnalyser');
 
 // Module to control application life.
 const app = electron.app;
@@ -58,7 +58,7 @@ app.on('activate', function () {
 
 ipcMain.on('getCoord',function(event, arg){
     debug("getCoord is called");
-    var data = kismetAnalyser.getPoints();
+    var data = wifiLogAnalyser.getPoints();
     
     event.returnValue = data;
 });

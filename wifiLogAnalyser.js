@@ -9,7 +9,7 @@ module.exports = {
         //cleanXMLFromInvalidCharacter before!!
         debug("getPoints is called");
         
-        var dataFile = fs.readFileSync(__dirname + '/data/dataSaved2.json');
+        var dataFile = fs.readFileSync(__dirname + '/data/dataSaved.json');
         
         debug("dataFile is " + typeof(dataFile) + " after reading json file");
         
