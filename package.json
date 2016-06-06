@@ -1,0 +1,17 @@
+{
+  "name": "wifi-heat-generator",
+  "version": "1.0.0",
+  "description": "Wifi heat generator from kismet",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron index.js"
+  },
+  "keywords": [
+    "kismet"
+  ],
+  "author": "Jimmy Mercier-Dionne",
+  "license": "ISC",
+  "dependencies": {
+    "electron-prebuilt": "^0.36.0"
+  }
+}
