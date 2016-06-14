@@ -9,6 +9,7 @@ module.exports = {
         //cleanXMLFromInvalidCharacter before!!
         debug("getPoints is called");
         
+        // TODO Check if folder and file exist
         var dataFile = fs.readFileSync(__dirname + '/data/dataSaved.json');
         
         debug("dataFile is " + typeof(dataFile) + " after reading json file");
