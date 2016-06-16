@@ -62,7 +62,7 @@ function uniqueList(gpsPointsArray) {
         var elementFind = false;
 
         pointsList.forEach(function (uniqEntry) {
-            if (uniqEntry.BSSID === originEntry.BSSID &&
+            if (uniqEntry.SSID === originEntry.SSID &&
                 uniqEntry.Lat === originEntry.Lat &&
                 uniqEntry.Lon === originEntry.Lon) {
                 elementFind = true;

@@ -4,7 +4,7 @@ console.log(ipcRenderer);
 
 var allBSSID = "all";
 var map, heatmap, data;
-var centerCoord = { lat: 46.773456, lng: -71.275436 };
+var centerCoord = { lat: 46.81568063, lng: -71.20222946 };
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -17,7 +17,7 @@ function initMap() {
     data: getPoints("all"),
     map: map,
     radius: 60,
-    opacity: 0.6
+    opacity: 0.6,
   });
 }
 
@@ -66,7 +66,7 @@ function getPoints(bssid) {
       var signalStrenght = 10;
       signalStrenght = signalStrenght * gpsEntry.Signal;
       googleList.push({ location: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon), weight: signalStrenght });
-      console.log("Lat: " + gpsEntry.Lat + " Lon: " + gpsEntry.Lon);
+      //console.log("Lat: " + gpsEntry.Lat + " Lon: " + gpsEntry.Lon);
     }
 
   }, this);
@@ -74,9 +74,30 @@ function getPoints(bssid) {
   return googleList;
 }
 
-function filterBSSID() {
-  var bssid = document.getElementById("bssidTextBox").value;
-  heatmap.set('data', getPoints(bssid));
+function getPointsBySSID(ssid) {
+  //Query data
+  if(typeof data === 'undefined') data = ipcRenderer.sendSync('getCoord');
+  
+  var googleList = [];
+
+  data.forEach(function (gpsEntry) {
+
+    if ((ssid === "all" || ssid === gpsEntry.SSID) && typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined' && gpsEntry.Signal > 0 ) {
+      var signalStrenght = 1;
+      signalStrenght = signalStrenght * gpsEntry.Signal;
+      googleList.push({ location: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon), weight: signalStrenght });
+      //console.log("Lat: " + gpsEntry.Lat + " Lon: " + gpsEntry.Lon);
+    }
+
+  }, this);
+
+  console.log(googleList);
+  return googleList;
+}
+
+function filterSSID() {
+  var ssid = document.getElementById("bssidTextBox").value;
+  heatmap.setData(getPointsBySSID(ssid));
 };
 
 function getPointsPolygonStyle() {
