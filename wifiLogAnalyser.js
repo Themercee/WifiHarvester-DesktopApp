@@ -1,32 +1,38 @@
 'use strict';
 
 const fs = require('fs');
-var debug = require('Debug')('kismetAnalyser');
+var path = require('path');
+
+var debug = require('Debug')('wifiLogAnalyser');
+var debugFileInfo = path.basename(__filename);
+
 var parseString = require('xml2js').parseString;
 
 module.exports = {
     getPoints: function () {
         //cleanXMLFromInvalidCharacter before!!
         debug("getPoints is called");
-        
-        // TODO Check if folder and file exist
-        var dataFile = fs.readFileSync(__dirname + '/data/dataSaved.json');
-        
-        debug("dataFile is " + typeof(dataFile) + " after reading json file");
-        
-        var gpsJs = JSON.parse(dataFile);
-        //var gpsJs = dataFile;
-        debug("gpsJs is " + typeof(gpsJs) + " after parsing to json");
-        
-        if(gpsJs === null){
-            debug("Error: Data to null from parseData() in ", __fiename);
-        }
-        
-        var gpsPoints = gpsJs.wifiNetworks;  // TO CHANGE
-        
-        //getAveragePoints()
-        
-        return uniqueList(gpsPoints);
+
+        var dataFile;
+
+        dataFile = fs.readFileSync(__dirname + '/data/dataSaved.json');
+
+        debug("dataFile is " + typeof (dataFile) + " after reading json file");
+
+            var gpsJs = JSON.parse(dataFile);
+            //var gpsJs = dataFile;
+            debug("gpsJs is " + typeof (gpsJs) + " after parsing to json");
+
+            if (gpsJs === null) {
+                debug("Error: Data to null from parseData() in ", __fiename);
+            }
+
+            var gpsPoints = gpsJs.wifiNetworks;
+
+            gpsPoints = removeLatLonAtZero(gpsPoints)
+
+            return uniqueList(gpsPoints);
+
     }
 };
 
@@ -37,7 +43,7 @@ function cleanXMLFromInvalidCharacter(pathToFile) {
 
 function parseXMLtoJS(pathToData) {
     debug("parseData is called");
-    
+
     var gpsData = fs.readFileSync(__dirname + pathToData, 'utf8');
     var data;
 
@@ -74,7 +80,7 @@ function uniqueList(gpsPointsArray) {
         }
 
     }, this);
-    
+
     return pointsList;
 }
 
@@ -82,6 +88,20 @@ function uniqueList(gpsPointsArray) {
  * @description This function do an average of the gps location to bypass
  *              the accuracy fault.
  */
-function getAveragePoints(gpsPointsArray){
+function getAveragePoints(gpsPointsArray) {
     var pointsList = [];
+}
+
+function removeLatLonAtZero(gpsPointsArray) {
+    var pointsList = [];
+
+    gpsPointsArray.forEach(function (gpsEntry) {
+        var elementFind = false;
+        if (gpsEntry.Lat != 0 && gpsEntry.Lon != 0) {
+            pointsList.push(gpsEntry);
+        }
+
+    }, this);
+
+    return pointsList;
 }

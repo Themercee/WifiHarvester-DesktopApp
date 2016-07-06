@@ -2,9 +2,12 @@ var ipcRenderer = require('electron').ipcRenderer;
 console.log(ipcRenderer);
 
 
-var allBSSID = "all";
+var allSSID = "all";
 var map, heatmap, data;
 var centerCoord = { lat: 46.81568063, lng: -71.20222946 };
+var ssidArray = [];
+
+var radius = 40;
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -14,9 +17,9 @@ function initMap() {
   });
 
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: getPoints("all"),
+    data: initData(),
     map: map,
-    radius: 60,
+    radius: radius,
     opacity: 0.6,
   });
 }
@@ -27,20 +30,20 @@ function toggleHeatmap() {
 
 function changeGradient() {
   var gradient = [
-    'rgba(0, 255, 255, 0)',
-    'rgba(0, 255, 255, 1)',
-    'rgba(0, 191, 255, 1)',
-    'rgba(0, 127, 255, 1)',
-    'rgba(0, 63, 255, 1)',
-    'rgba(0, 0, 255, 1)',
-    'rgba(0, 0, 223, 1)',
-    'rgba(0, 0, 191, 1)',
-    'rgba(0, 0, 159, 1)',
-    'rgba(0, 0, 127, 1)',
-    'rgba(63, 0, 91, 1)',
-    'rgba(127, 0, 63, 1)',
-    'rgba(191, 0, 31, 1)',
-    'rgba(255, 0, 0, 1)'
+    'rgba(255, 0, 0, 0)',
+    'rgba(245, 10, 0, 1)',
+    'rgba(235, 20, 0, 1)',
+    'rgba(225, 30, 0, 1)',
+    'rgba(215, 40, 0, 1)',
+    'rgba(195, 60, 0, 1)',
+    'rgba(175, 80, 0, 1)',
+    'rgba(155, 100, 0, 1)',
+    'rgba(135, 120, 0, 1)',
+    'rgba(115, 140, 0, 1)',
+    'rgba(95, 160, 0, 1)',
+    'rgba(75, 180, 0, 1)',
+    'rgba(64, 191, 0, 1)',
+    'rgba(0, 255, 0, 1)'
   ]
   heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
 }
@@ -54,7 +57,7 @@ function changeOpacity() {
 }
 
 
-function getPoints(bssid) {
+function initData() {
   //Query data
   data = ipcRenderer.sendSync('getCoord');
 
@@ -62,30 +65,42 @@ function getPoints(bssid) {
 
   data.forEach(function (gpsEntry) {
 
-    if ((bssid === "all" || bssid === gpsEntry.BSSID) && typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined' ) {
-      var signalStrenght = 10;
+    if (typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined') {
+      // SIGNAL STRENGHT NOT WORKING
+      var signalStrenght = 1;
       signalStrenght = signalStrenght * gpsEntry.Signal;
       googleList.push({ location: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon), weight: signalStrenght });
-      //console.log("Lat: " + gpsEntry.Lat + " Lon: " + gpsEntry.Lon);
+
+      addSSID(gpsEntry.SSID);
+
     }
 
   }, this);
+
+  fillTable(ssidArray);
 
   return googleList;
 }
 
 function getPointsBySSID(ssid) {
   //Query data
-  if(typeof data === 'undefined') data = ipcRenderer.sendSync('getCoord');
-  
+  if (typeof data === 'undefined') data = ipcRenderer.sendSync('getCoord');
+
   var googleList = [];
 
   data.forEach(function (gpsEntry) {
 
-    if ((ssid === "all" || ssid === gpsEntry.SSID) && typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined' && gpsEntry.Signal > 0 ) {
-      var signalStrenght = 1;
+    if ((ssid === allSSID || ssid === gpsEntry.SSID) && typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined' && gpsEntry.Signal > 0) {
+      var signalStrenght = 10;
       signalStrenght = signalStrenght * gpsEntry.Signal;
       googleList.push({ location: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon), weight: signalStrenght });
+
+      var marker = new google.maps.Marker({
+        position: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon),
+        label: "Test",
+        map: map
+      });
+
       //console.log("Lat: " + gpsEntry.Lat + " Lon: " + gpsEntry.Lon);
     }
 
@@ -96,19 +111,19 @@ function getPointsBySSID(ssid) {
 }
 
 function filterSSID() {
-  var ssid = document.getElementById("bssidTextBox").value;
+  var ssid = document.getElementById("ssidTextBox").value;
   heatmap.setData(getPointsBySSID(ssid));
 };
 
 function getPointsPolygonStyle() {
-  var bssid = document.getElementById("bssidTextBox").value;
+  var ssid = document.getElementById("ssidTextBox").value;
   var lowSignal = [];
   var mediumSignal = [];
   var hightSignal = [];
 
 
   data.forEach(function (wgEntry) {
-    if (wgEntry.BSSID === bssid || bssid === allBSSID) {
+    if (wgEntry.SSID === ssid || ssid === allSSID) {
       if (wgEntry.Signal >= 1 && wgEntry.Signal < 3 && typeof wgEntry.Lat != 'undefined' && typeof wgEntry.Lon != 'undefined') {
         //set Low signal
         lowSignal.push({ lat: wgEntry.Lat, lng: wgEntry.Lon });
@@ -166,4 +181,36 @@ function clearMap() {
     center: centerCoord,
     mapTypeId: google.maps.MapTypeId.SATELLITE
   });
+}
+
+/**
+ * @param ssid The SSID to add to the list
+ * @description This method increments the number of location by one from the SSID if it exists. 
+ */
+function addSSID(newSSID) {
+  var isInArray = false;
+
+  for (i = 0; i < ssidArray.length; i++) {
+    if (ssidArray[i].ssid === newSSID) {
+      isInArray = true;
+      ssidArray[i].numOfLocation++;
+      break;
+    }
+  }
+
+  if (!isInArray) {
+    ssidArray.push({ ssid: newSSID, numOfLocation: 1 });
+  }
+}
+
+
+function fillTable(ssidArray) {
+  var htmlTable = document.getElementById("ssidArray");
+
+  ssidArray.forEach(function (entry) {
+    var newRow = htmlTable.insertRow(htmlTable.rows.length);
+    newRow.insertCell(0).appendChild(document.createTextNode(entry.ssid));
+    newRow.insertCell(1).appendChild(document.createTextNode(entry.numOfLocation));
+
+  }, this);
 }

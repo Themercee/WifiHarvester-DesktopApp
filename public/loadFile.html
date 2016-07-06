@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html ng-app="loadFile">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+
+    <link rel="stylesheet" href="vendor/css/kickstart.css" media="all" />
+
+
+</head>
+
+<body>
+    <div class="col_12" ng-controller="formLoadFile">
+        <p>
+            Choose the location of the file you want to load in the application (file containing the list of Wi-Fi)
+        </p>
+        <label>Path to file: </label>
+        <input class="col_8" type="text" ng-model="path" />
+        <button class="medium" ng-click="setDataPath()"><i class="fa fa-upload"></i> Upload</a></button>
+    </div>
+</body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+<script>
+      window.jQuery || document.write('<script src="../bower_components/jquery/dist/jquery.min.js"><\/script>')
+</script>
+
+<!-- KICKSTART -->
+<script src="vendor/js/kickstart.js"></script>
+
+<script src="../bower_components/angular/angular.js"></script>
+<script src="loadFile.js"></script>
+
+</html>
