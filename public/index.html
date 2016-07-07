@@ -4,33 +4,16 @@
 <head>
   <meta charset="utf-8">
   <title>Heatmaps</title>
-  <style>
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    
-    #map {
-      height: 100%;
-    }
-    
-    #floating-panel-top {
-      position: absolute;
-      top: 10px;
-      left: 25%;
-      z-index: 5;
-      background-color: #fff;
-      padding: 5px;
-      border: 1px solid #999;
-      text-align: center;
-      font-family: 'Roboto', 'sans-serif';
-      line-height: 30px;
-      padding-left: 10px;
-    }
-    
-  </style>
+
+  <script src="../bower_components/jquery/dist/jquery.js"></script>
+  <script>
+         window.jQuery || document.write('<script src="../bower_components/jquery/dist/jquery.min.js"><\/script>')
+    </script>
+
+  <script src="vendor/js/kickstart.js"></script>
+  <link rel="stylesheet" href="vendor/css/kickstart.css" media="all" />
+
+  <link rel="stylesheet" href="index.css" media="all" />
 </head>
 
 <body>
@@ -39,13 +22,26 @@
     <button onclick="changeGradient()">Change gradient</button>
     <button onclick="clearMap()">Clear maps</button>
     <button onclick="changeOpacity()">Change opacity</button>
-    <input type="text" placeholder="BSSID" id="bssidTextBox" />
+    <input type="text" placeholder="SSID" id="ssidTextBox" />
     <button onclick="filterSSID()">Filter</button>
     <button onclick="getPointsPolygonStyle()">Polygon Style</button>
+
+    <button id="addDelButton" onclick="switchMode()"><i class="fa fa-plus"> Mode</i></button>
   </div>
+
+
+  <div id="floating-panel-left">
+    <table id="ssidArray">
+      <tr>
+        <th>SSID</th>
+        <th>Number of <br />Location</th>
+      </tr>
+    </table>
+  </div>
+
   <div id="map"></div>
   <script src="googleEarth.js"></script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOU_API_KEY&signed_in=true&libraries=visualization&callback=initMap">
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&signed_in=true&libraries=visualization,geometry&callback=initMap">
     </script>
 </body>
 

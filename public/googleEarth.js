@@ -3,11 +3,12 @@ console.log(ipcRenderer);
 
 
 var allSSID = "all";
-var map, heatmap, data;
+var map, heatmap, data, googleCoord;
 var centerCoord = { lat: 46.81568063, lng: -71.20222946 };
 var ssidArray = [];
 
 // BUTTON STATUS
+var addCoordMode = true;
 
 var radius = 40;
 
@@ -18,11 +19,45 @@ function initMap() {
     mapTypeId: google.maps.MapTypeId.SATELLITE
   });
 
+  googleCoord = initData();
+
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: initData(),
+    data: googleCoord,
     map: map,
     radius: radius,
     opacity: 0.6,
+  });
+
+  // Manage add/delete points
+  map.addListener('click',function (e) {
+            //if we want to add coord in the map
+    if(addCoordMode){
+      googleCoord.push({ location: new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()), weight:5});
+      heatmap.setData(googleCoord);
+
+    }else{  //want to delete coord
+      var index = -1;
+      var minDistance;
+      var lat, lnt;
+
+      // Search the nearest points from the click to delete
+      for(i = 1;i < googleCoord.length; i++){
+        var distBetweenPoints = google.maps.geometry.spherical.computeDistanceBetween (e.latLng, googleCoord[i].location);
+        
+        if(distBetweenPoints < minDistance || minDistance === undefined){
+          minDistance = distBetweenPoints;
+          index = i;
+        }
+        
+      }
+
+      if(index > -1){
+        googleCoord.splice(index,1);
+        heatmap.setData(googleCoord);
+      }
+
+    }
+
   });
 }
 
@@ -209,4 +244,16 @@ function fillTable(ssidArray) {
     newRow.insertCell(1).appendChild(document.createTextNode(entry.numOfLocation));
 
   }, this);
+}
+
+function switchMode(){
+  if(addCoordMode === true){
+    addCoordMode = false;
+    $("#addDelButton").children('i').eq(0).attr('class','fa fa-minus');
+  }else{
+    addCoordMode = true;
+    $("#addDelButton").children('i').eq(0).attr('class','fa fa-plus');
+  }
+
+  
 }
