@@ -1,9 +1,14 @@
 'use strict';
 const fs = require('fs');
+const path = require('path');
+
 const electron = require('electron');
 const ipcMain = require('electron').ipcMain;
+const dialog = require('dialog');
+
 var parseString = require('xml2js').parseString;
 var debug = require('debug')('index');
+
 var wifiLogAnalyser = require('./wifiLogAnalyser');
 
 // Module to control application life.
@@ -14,24 +19,39 @@ const BrowserWindow = electron.BrowserWindow;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
+let loadFileWindow;
+let dataPath;
 
-function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({width: 1500, height: 800});
+function createWindow() {
+  debug("[+] createWindow is called")
 
-  // and load the index.html of the app.
-  mainWindow.loadURL('file://' + __dirname + '/public/index.html');
+  dialog.showOpenDialog(function (fileNames) {
+    if (fileNames === undefined) {
+      debug("[-] No file choose. Quit!");
+      app.quit();
 
-  // Open the DevTools.
-  //mainWindow.webContents.openDevTools();
+    };
 
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function() {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null;
+    var fileName = fileNames[0];
+    dataPath = fileName;
+
+    debug("[!] dataPath = " + dataPath);
+
+    // Create the browser window.
+    mainWindow = new BrowserWindow({ width: 1500, height: 800 });
+
+    // and load the index.html of the app.
+    mainWindow.loadURL('file://' + __dirname + '/public/index.html');
+
+    // Open the DevTools.
+    //mainWindow.webContents.openDevTools();
+
+    // Emitted when the window is closed.
+    mainWindow.on('closed', function () {
+      mainWindow = null;
+    });
   });
+
 }
 
 // This method will be called when Electron has finished
@@ -56,9 +76,23 @@ app.on('activate', function () {
 });
 
 
-ipcMain.on('getCoord',function(event, arg){
-    debug("getCoord is called");
-    var data = wifiLogAnalyser.getPoints();
-    
-    event.returnValue = data;
+ipcMain.on('getCoord', function (event, arg) {
+  debug("[+] getCoord is called");
+
+  var data = wifiLogAnalyser.getPoints(dataPath);
+
+  debug("[+] data is set to: " + typeof (data));
+  event.returnValue = data;
 });
+
+ipcMain.on('setDataPath', function (event, arg) {
+  debug(" [+] In setDataPath event.");
+  dataPath = arg;
+  debug("[+] dataPath set to: " + dataPath);
+  event.returnValue = "YES";
+});
+
+
+function loadDataFile() {
+
+}

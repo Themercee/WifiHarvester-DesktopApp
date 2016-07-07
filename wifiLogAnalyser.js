@@ -9,29 +9,29 @@ var debugFileInfo = path.basename(__filename);
 var parseString = require('xml2js').parseString;
 
 module.exports = {
-    getPoints: function () {
+    getPoints: function (dataPath) {
         //cleanXMLFromInvalidCharacter before!!
         debug("getPoints is called");
 
         var dataFile;
 
-        dataFile = fs.readFileSync(__dirname + '/data/dataSaved.json');
+        dataFile = fs.readFileSync(dataPath);
 
         debug("dataFile is " + typeof (dataFile) + " after reading json file");
 
-            var gpsJs = JSON.parse(dataFile);
-            //var gpsJs = dataFile;
-            debug("gpsJs is " + typeof (gpsJs) + " after parsing to json");
+        var gpsJs = JSON.parse(dataFile);
+        //var gpsJs = dataFile;
+        debug("gpsJs is " + typeof (gpsJs) + " after parsing to json");
 
-            if (gpsJs === null) {
-                debug("Error: Data to null from parseData() in ", __fiename);
-            }
+        if (gpsJs === null) {
+            debug("Error: Data to null from parseData() in ", __fiename);
+        }
 
-            var gpsPoints = gpsJs.wifiNetworks;
+        var gpsPoints = gpsJs.wifiNetworks;
 
-            gpsPoints = removeLatLonAtZero(gpsPoints)
+        gpsPoints = removeLatLonAtZero(gpsPoints)
 
-            return uniqueList(gpsPoints);
+        return uniqueList(gpsPoints);
 
     }
 };

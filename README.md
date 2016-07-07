@@ -10,6 +10,12 @@ Coming Soon
 
 ## TODO
 
-- Add some verification
+- Add some test
 - Add UI element : SSID List, Number of AP
 - Detect position to center the map
+- Correct bug with the polygons display
+- Add method to filter wrong data (like an average of data to ensure the quality)
+
+## Development
+###DEBUG
+To use the debug option on Windows: set DEBUG=*,-not_this
