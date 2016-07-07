@@ -19,38 +19,54 @@ const BrowserWindow = electron.BrowserWindow;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
-let loadFileWindow;
+let logoWindow;
 let dataPath;
+let logoHasDisplayed = false;
 
 function createWindow() {
   debug("[+] createWindow is called")
 
-  dialog.showOpenDialog(function (fileNames) {
-    if (fileNames === undefined) {
-      debug("[-] No file choose. Quit!");
-      app.quit();
+  // Create the browser window.
+  logoWindow = new BrowserWindow({ width: 500, height: 500, transparent:true ,frame: false });
+  logoWindow.loadURL('file://' + __dirname + '/public/logo.html');
 
-    };
+  setTimeout(function () {
+    logoWindow.close();
+    logoWindow = null;
+    logoHasDisplayed = true;
 
-    var fileName = fileNames[0];
-    dataPath = fileName;
+    dialog.showOpenDialog(function (fileNames) {
+      debug("[!] Dialog box open")
+      if (fileNames === undefined) {
+        debug("[-] No file choose. Quit!");
+        app.quit();
 
-    debug("[!] dataPath = " + dataPath);
+      } else {
+        var fileName = fileNames[0];
+        dataPath = fileName;
 
-    // Create the browser window.
-    mainWindow = new BrowserWindow({ width: 1500, height: 800 });
+        debug("[!] dataPath = " + dataPath);
 
-    // and load the index.html of the app.
-    mainWindow.loadURL('file://' + __dirname + '/public/index.html');
+        // Create the browser window.
+        mainWindow = new BrowserWindow({ width: 1500, height: 800 });
 
-    // Open the DevTools.
-    //mainWindow.webContents.openDevTools();
+        // and load the index.html of the app.
+        mainWindow.loadURL('file://' + __dirname + '/public/index.html');
 
-    // Emitted when the window is closed.
-    mainWindow.on('closed', function () {
-      mainWindow = null;
+        // Open the DevTools.
+        //mainWindow.webContents.openDevTools();
+
+        // Emitted when the window is closed.
+        mainWindow.on('closed', function () {
+          mainWindow = null;
+        });
+      }
     });
-  });
+
+
+  }, 3000);
+
+
 
 }
 
@@ -62,7 +78,7 @@ app.on('ready', createWindow);
 app.on('window-all-closed', function () {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && logoHasDisplayed) {
     app.quit();
   }
 });
@@ -84,15 +100,3 @@ ipcMain.on('getCoord', function (event, arg) {
   debug("[+] data is set to: " + typeof (data));
   event.returnValue = data;
 });
-
-ipcMain.on('setDataPath', function (event, arg) {
-  debug(" [+] In setDataPath event.");
-  dataPath = arg;
-  debug("[+] dataPath set to: " + dataPath);
-  event.returnValue = "YES";
-});
-
-
-function loadDataFile() {
-
-}

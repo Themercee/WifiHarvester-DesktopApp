@@ -7,6 +7,8 @@ var map, heatmap, data;
 var centerCoord = { lat: 46.81568063, lng: -71.20222946 };
 var ssidArray = [];
 
+// BUTTON STATUS
+
 var radius = 40;
 
 function initMap() {
@@ -94,12 +96,6 @@ function getPointsBySSID(ssid) {
       var signalStrenght = 10;
       signalStrenght = signalStrenght * gpsEntry.Signal;
       googleList.push({ location: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon), weight: signalStrenght });
-
-      var marker = new google.maps.Marker({
-        position: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon),
-        label: "Test",
-        map: map
-      });
 
       //console.log("Lat: " + gpsEntry.Lat + " Lon: " + gpsEntry.Lon);
     }
