@@ -64,7 +64,7 @@ function createWindow() {
     });
 
 
-  }, 3000);
+  }, 4000);
 
 
 
