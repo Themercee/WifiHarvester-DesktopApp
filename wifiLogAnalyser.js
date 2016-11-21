@@ -6,11 +6,8 @@ var path = require('path');
 var debug = require('Debug')('wifiLogAnalyser');
 var debugFileInfo = path.basename(__filename);
 
-var parseString = require('xml2js').parseString;
-
 module.exports = {
     getPoints: function (dataPath) {
-        //cleanXMLFromInvalidCharacter before!!
         debug("getPoints is called");
 
         var dataFile;
@@ -37,29 +34,6 @@ module.exports = {
 };
 
 
-function cleanXMLFromInvalidCharacter(pathToFile) {
-
-};
-
-function parseXMLtoJS(pathToData) {
-    debug("parseData is called");
-
-    var gpsData = fs.readFileSync(__dirname + pathToData, 'utf8');
-    var data;
-
-    parseString(gpsData, function (err, result) {
-        debug("Data parse to js");
-        data = JSON.parse(JSON.stringify(result));
-    });
-
-    if (data === null) {
-        console.log("ERROR READING GPSXML FILE!! : " + err);
-        return null;
-    } else {
-        return data;
-    }
-};
-
 // Filter the gps points list to get only unique value
 function uniqueList(gpsPointsArray) {
     var pointsList = [];
@@ -67,21 +41,33 @@ function uniqueList(gpsPointsArray) {
     gpsPointsArray.forEach(function (originEntry) {
         var elementFind = false;
 
-        pointsList.forEach(function (uniqEntry) {
+        pointsList.forEach(function (uniqEntry, index) {
             if (uniqEntry.SSID === originEntry.SSID &&
                 uniqEntry.Lat === originEntry.Lat &&
                 uniqEntry.Lon === originEntry.Lon) {
                 elementFind = true;
+                pointsList[index].number += 1;
+                pointsList[index].Signal += originEntry.Signal;
             }
         }, this);
 
         if (!elementFind) {
+            originEntry.number = 1;
             pointsList.push(originEntry);
         }
 
     }, this);
 
+    //Ajust the Signal
+    setAverageSignal(pointsList);
+
     return pointsList;
+}
+
+function setAverageSignal(pointsList){
+    for(var i=0; i < pointsList.length; i++){
+        pointsList[i].Signal = Math.round( pointsList[i].Signal / pointsList[i].number );
+    }
 }
 
 /**

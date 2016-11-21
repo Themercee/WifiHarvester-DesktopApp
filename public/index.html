@@ -21,12 +21,17 @@
     <button onclick="toggleHeatmap()">Toggle Heatmap</button>
     <button onclick="changeGradient()">Change gradient</button>
     <button onclick="clearMap()">Clear maps</button>
-    <button onclick="changeOpacity()">Change opacity</button>
     <input type="text" placeholder="SSID" id="ssidTextBox" />
     <button onclick="filterSSID()">Filter</button>
-    <button onclick="getPointsPolygonStyle()">Polygon Style</button>
+    <button onclick="getPointsPolygonStyle()">Get Signal Area</button>
+    <button onclick="clearPolygon()">Clear Polygon</button>
 
-    <button id="addDelButton" onclick="switchMode()"><i class="fa fa-plus"> Mode</i></button>
+    <select id="clickAction">
+      <option value="info">Informations</option>
+      <option value="add">Add data</option>
+      <option value="del">Delete data</option>
+    </select>
+      
   </div>
 
 
@@ -39,6 +44,20 @@
     </table>
   </div>
 
+  <div id="floating-panel-right">
+    <div class="">
+      <div class="col_12">
+        <h5>Signal Area</h5>
+      </div>
+      <div class="col_4"><button onclick="getSignalAreaLow()">low</button></div>
+      <div class="col_4"><button onclick="getSignalAreaMedium()">medium</button></div>
+      <div class="col_4"><button onclick="getSignalAreaHigh()">high</button></div>
+
+
+    </div>
+    <hr />
+  </div>
+    
   <div id="map"></div>
   <script src="googleEarth.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&signed_in=true&libraries=visualization,geometry&callback=initMap">

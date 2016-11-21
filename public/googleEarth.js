@@ -3,66 +3,118 @@ console.log(ipcRenderer);
 
 
 var allSSID = "all";
-var map, heatmap, data, googleCoord;
-var centerCoord = { lat: 46.81568063, lng: -71.20222946 };
+var map, heatmap, data, wifiGCList, originalWifiGCList;
+var lowWifiPoly, mediumWifiPoly, highWifiPoly;
+
+var centerCoord = {lat: 46.81568063, lng: -71.20222946};
 var ssidArray = [];
 
-// BUTTON STATUS
-var addCoordMode = true;
-
 var radius = 40;
+var maxDistance = 15;
+
 
 function initMap() {
+  initOverlay();
+  wifiGCList = initData();
+
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 17,
     center: centerCoord,
     mapTypeId: google.maps.MapTypeId.SATELLITE
   });
 
-  googleCoord = initData();
-
   heatmap = new google.maps.visualization.HeatmapLayer({
-    data: googleCoord,
+    data: wifiGCList,
     map: map,
     radius: radius,
     opacity: 0.6,
   });
 
   // Manage add/delete points
-  map.addListener('click',function (e) {
-            //if we want to add coord in the map
-    if(addCoordMode){
-      googleCoord.push({ location: new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()), weight:5});
-      heatmap.setData(googleCoord);
+  map.addListener('click', function (e) {
+    //Get Click Action
+    var action = getClickAction();
 
-    }else{  //want to delete coord
-      var index = -1;
-      var minDistance;
-      var lat, lnt;
-
-      // Search the nearest points from the click to delete
-      for(i = 1;i < googleCoord.length; i++){
-        var distBetweenPoints = google.maps.geometry.spherical.computeDistanceBetween (e.latLng, googleCoord[i].location);
-        
-        if(distBetweenPoints < minDistance || minDistance === undefined){
-          minDistance = distBetweenPoints;
-          index = i;
-        }
-        
-      }
-
-      if(index > -1){
-        googleCoord.splice(index,1);
-        heatmap.setData(googleCoord);
-      }
-
+    //if we want to add coord in the map
+    if (action === "add") {
+      addDataOnClick(e);
+    } else if (action === "del") {  //want to delete coord
+      delDataOnClick(e);
+    } else if (action === "info") {
+      getDataInfoOnClick(e);
     }
 
   });
+
+  map.setCenter(wifiGCList[0].location);
 }
 
-function toggleHeatmap() {
-  heatmap.setMap(heatmap.getMap() ? null : map);
+function getDataInfoOnClick(e) {
+  var pointToSeeInfo = getNearestPoint(e);
+
+  customTxt = "<div>Lat: " + pointToSeeInfo.location.lat() + "<br />Lon: " + pointToSeeInfo.location.lng() + " </div>"
+  txt = new TxtOverlay(pointToSeeInfo.location, customTxt, "customBox", map)
+}
+
+// Event from google maps
+function addDataOnClick(e) {
+  wifiGCList.push(new wifiGC(e.latLng.lat(), e.latLng.lng(), 20, ""));
+  heatmap.setData(wifiGCList);
+}
+
+function delDataOnClick(e) {
+  var pointToDelete = getNearestPoint(e);
+
+  var googleCoordUpdated = [];
+
+  if (typeof pointToDelete !== 'undefined') {
+
+    // Update googleCoord data
+    for (var i = 0; i < wifiGCList.length; i++) {
+      if (wifiGCList[i].location.lat() !== pointToDelete.lat &&
+        wifiGCList[i].location.lng() !== pointToDelete.lon) {
+        googleCoordUpdated.push(wifiGCList[i]);
+      }
+    }
+
+    wifiGCList = googleCoordUpdated;
+    heatmap.setData(wifiGCList);
+  }
+}
+
+function getNearestPoint(e) {
+  var index = -1;
+  var minDistance;
+  var lat, lnt;
+
+  //Get filterSSID
+  var ssidFilter = getSSIDFilter();
+
+  // Search the nearest points from the click
+  for (i = 0; i < wifiGCList.length; i++) {
+    if (ssidFilter !== allSSID && wifiGCList[i].ssid !== ssidFilter) { continue; }
+
+    var gCoor = { location: new google.maps.LatLng(wifiGCList[i].lat, wifiGCList[i].lon) };
+
+    var distBetweenPoints = google.maps.geometry.spherical.computeDistanceBetween(e.latLng, gCoor.location);
+
+    if (distBetweenPoints < minDistance || typeof minDistance === 'undefined') {
+      minDistance = distBetweenPoints;
+      index = i;
+    }
+  }
+
+  return wifiGCList[index];
+}
+
+function getSSIDFilter() {
+  var ssid = document.getElementById("ssidTextBox").value;
+  
+  return (ssid === "" ? allSSID : ssid);
+}
+
+function getClickAction() {
+  return $("#clickAction").val();
 }
 
 function changeGradient() {
@@ -93,87 +145,148 @@ function changeOpacity() {
   heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
 }
 
+function toggleHeatmap() {
+  heatmap.setMap(heatmap.getMap() ? null : map);
+}
+
+function getSignalAreaLow() {
+  if (typeof lowWifiPoly == 'undefined') getPointsPolygonStyle();
+  lowWifiPoly.setMap(map);
+}
+
+function getSignalAreaMedium() {
+  if (typeof mediumWifiPoly == 'undefined') getPointsPolygonStyle();
+  mediumWifiPoly.setMap(map);
+}
+
+function getSignalAreaHigh() {
+  if (typeof highWifiPoly == 'undefined') getPointsPolygonStyle();
+  highWifiPoly.setMap(map);
+}
+
+function clearPolygon() {
+  if (typeof lowWifiPoly !== 'undefined' &&
+    typeof mediumWifiPoly !== 'undefined' &&
+    typeof highWifiPoly !== 'undefined') {
+    lowWifiPoly.setMap(null);
+    mediumWifiPoly.setMap(null);
+    highWifiPoly.setMap(null);
+  }
+
+}
+
+/*************************************
+ * FUNCTION RELATED TO LOADING OF DATA
+ ************************************/
+
+function WifiGooCoord(lat, lon, signal, ssid){
+  this.lat = lat;
+  this.lon = lon;
+  this.signal = signal;
+  this.ssid = ssid;
+  this.location = new google.maps.LatLng(lat, lon);
+  this.setWeight = function(factor){ return (this.signal * factor); };
+  this.weight = this.setWeight(20);
+  
+
+  
+}
 
 function initData() {
   //Query data
   data = ipcRenderer.sendSync('getCoord');
 
-  var googleList = [];
-
+  wifiGCList = [];
+  
   data.forEach(function (gpsEntry) {
-
-    if (typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined') {
-      // SIGNAL STRENGHT NOT WORKING
-      var signalStrenght = 1;
-      signalStrenght = signalStrenght * gpsEntry.Signal;
-      googleList.push({ location: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon), weight: signalStrenght });
+    if(gpsEntry.SSID === "Palace Royal Chambres" && gpsEntry.Signal == 4){
+      console.log(gpsEntry);
+    }
+    if (typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined' && gpsEntry.Signal > 0) {
+      wifiGCList.push( new WifiGooCoord(gpsEntry.Lat, gpsEntry.Lon, gpsEntry.Signal, gpsEntry.SSID));
 
       addSSID(gpsEntry.SSID);
-
     }
 
   }, this);
 
   fillTable(ssidArray);
 
-  return googleList;
+  originalWifiGCList = wifiGCList;
+
+  return wifiGCList;
 }
 
-function getPointsBySSID(ssid) {
-  //Query data
-  if (typeof data === 'undefined') data = ipcRenderer.sendSync('getCoord');
+function getPointsBySSID(ssidToFilter) {
+  var googleCoorFiltered = [];
 
-  var googleList = [];
+  if(ssidToFilter === allSSID) return originalWifiGCList;
 
-  data.forEach(function (gpsEntry) {
-
-    if ((ssid === allSSID || ssid === gpsEntry.SSID) && typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined' && gpsEntry.Signal > 0) {
-      var signalStrenght = 10;
-      signalStrenght = signalStrenght * gpsEntry.Signal;
-      googleList.push({ location: new google.maps.LatLng(gpsEntry.Lat, gpsEntry.Lon), weight: signalStrenght });
-
-      //console.log("Lat: " + gpsEntry.Lat + " Lon: " + gpsEntry.Lon);
+  originalWifiGCList.forEach(function (wifiGC) {
+    if(wifiGC.ssid === "Palace Royal Chambres" && wifiGC.signal == 4){
+      console.log(wifiGC);
     }
 
+    if ((ssidToFilter === allSSID || ssidToFilter === wifiGC.ssid) && typeof wifiGC.lat != 'undefined' && typeof wifiGC.lon != 'undefined' && wifiGC.signal > 0) {
+      googleCoorFiltered.push( new WifiGooCoord(wifiGC.lat, wifiGC.lon, wifiGC.signal, wifiGC.ssid));
+    }
   }, this);
 
-  console.log(googleList);
-  return googleList;
+  wifiGCList = googleCoorFiltered;
+  return wifiGCList;
 }
 
 function filterSSID() {
-  var ssid = document.getElementById("ssidTextBox").value;
+  var ssid = getSSIDFilter();
   heatmap.setData(getPointsBySSID(ssid));
 };
 
+function rad(x) {
+  return x * Math.PI / 180;
+};
+
+function getDistance(p1, p2) {
+  var R = 6378137; // Earth’s mean radius in meter
+  var dLat = rad(p2.lat() - p1.lat());
+  var dLong = rad(p2.lng() - p1.lng());
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rad(p1.lat())) * Math.cos(rad(p2.lat())) *
+    Math.sin(dLong / 2) * Math.sin(dLong / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  var d = R * c;
+  return d; // returns the distance in meter
+};
+
 function getPointsPolygonStyle() {
-  var ssid = document.getElementById("ssidTextBox").value;
+  var ssidFilter = getSSIDFilter();
   var lowSignal = [];
   var mediumSignal = [];
-  var hightSignal = [];
+  var highSignal = [];
 
-
-  data.forEach(function (wgEntry) {
-    if (wgEntry.SSID === ssid || ssid === allSSID) {
-      if (wgEntry.Signal >= 1 && wgEntry.Signal < 3 && typeof wgEntry.Lat != 'undefined' && typeof wgEntry.Lon != 'undefined') {
+  wifiGCList.forEach(function (wgEntry, index) {
+    if (wgEntry.ssid === ssidFilter || ssidFilter === allSSID) {
+      if(wgEntry.signal == 4){
+        console.log(wgEntry);
+      }
+      if (wgEntry.signal >= 1 && wgEntry.signal < 3 && typeof wgEntry.lat != 'undefined' && typeof wgEntry.lon != 'undefined') {
         //set Low signal
-        lowSignal.push({ lat: wgEntry.Lat, lng: wgEntry.Lon });
+        lowSignal.push({ lat: wgEntry.lat, lng: wgEntry.lon });
 
-      } else if (wgEntry.Signal === 3 && typeof wgEntry.Lat != 'undefined' && typeof wgEntry.Lon != 'undefined') {
+      } else if (wgEntry.signal == 3 && typeof wgEntry.lat != 'undefined' && typeof wgEntry.lon != 'undefined') {
         //set medium signal
-        mediumSignal.push({ lat: wgEntry.Lat, lng: wgEntry.Lon });
+        mediumSignal.push({ lat: wgEntry.lat, lng: wgEntry.lon });
 
-      } else if (wgEntry.Signal <= 5 && typeof wgEntry.Lat != 'undefined' && typeof wgEntry.Lon != 'undefined') {
-        //set hight signal
-        hightSignal.push({ lat: wgEntry.Lat, lng: wgEntry.Lon });
+      } else if (wgEntry.signal >= 4 && typeof wgEntry.lat != 'undefined' && typeof wgEntry.lon != 'undefined') {
+        //set high signal
+        highSignal.push({ lat: wgEntry.lat, lng: wgEntry.lon });
       }
     }
-
   }, this);
 
+  console.log(highSignal);
 
 
-  var lowWifiPoly = new google.maps.Polygon({
+  lowWifiPoly = new google.maps.Polygon({
     paths: lowSignal,
     strokeColor: '#FF0000',
     strokeOpacity: 0.8,
@@ -182,7 +295,7 @@ function getPointsPolygonStyle() {
     fillOpacity: 0.35
   });
 
-  var mediumWifiPoly = new google.maps.Polygon({
+  mediumWifiPoly = new google.maps.Polygon({
     paths: mediumSignal,
     strokeColor: '#0000FF',
     strokeOpacity: 0.8,
@@ -191,8 +304,8 @@ function getPointsPolygonStyle() {
     fillOpacity: 0.35
   });
 
-  var hightWifiPoly = new google.maps.Polygon({
-    paths: hightSignal,
+  highWifiPoly = new google.maps.Polygon({
+    paths: highSignal,
     strokeColor: '#00FF00',
     strokeOpacity: 0.8,
     strokeWeight: 2,
@@ -200,18 +313,15 @@ function getPointsPolygonStyle() {
     fillOpacity: 0.35
   });
 
-  lowWifiPoly.setMap(map);
-  mediumWifiPoly.setMap(map);
-  hightWifiPoly.setMap(map);
-
 }
 
 function clearMap() {
-  map = new google.maps.Map(document.getElementById('map'), {
+  initMap();
+  /*map = new google.maps.Map(document.getElementById('map'), {
     zoom: 17,
     center: centerCoord,
     mapTypeId: google.maps.MapTypeId.SATELLITE
-  });
+  });*/
 }
 
 /**
@@ -246,14 +356,106 @@ function fillTable(ssidArray) {
   }, this);
 }
 
-function switchMode(){
-  if(addCoordMode === true){
-    addCoordMode = false;
-    $("#addDelButton").children('i').eq(0).attr('class','fa fa-minus');
-  }else{
-    addCoordMode = true;
-    $("#addDelButton").children('i').eq(0).attr('class','fa fa-plus');
+
+//************************************
+// TEXT OVERLAY TO SHOW INFORMATION
+//************************************
+function TxtOverlay(pos, txt, cls, map) {
+
+  // Now initialize all properties.
+  this.pos = pos;
+  this.txt_ = txt;
+  this.cls_ = cls;
+  this.map_ = map;
+
+  // We define a property to hold the image's
+  // div. We'll actually create this div
+  // upon receipt of the add() method so we'll
+  // leave it null for now.
+  this.div_ = null;
+
+  // Explicitly call setMap() on this overlay
+  this.setMap(map);
+}
+
+function initOverlay() {
+  TxtOverlay.prototype = new google.maps.OverlayView();
+
+  TxtOverlay.prototype.onAdd = function () {
+
+    // Note: an overlay's receipt of onAdd() indicates that
+    // the map's panes are now available for attaching
+    // the overlay to the map via the DOM.
+
+    // Create the DIV and set some basic attributes.
+    var div = document.createElement('DIV');
+    div.className = this.cls_;
+
+    div.innerHTML = this.txt_;
+
+    // Set the overlay's div_ property to this DIV
+    this.div_ = div;
+    var overlayProjection = this.getProjection();
+    var position = overlayProjection.fromLatLngToDivPixel(this.pos);
+    div.style.left = position.x + 'px';
+    div.style.top = position.y + 'px';
+    // We add an overlay to a map via one of the map's panes.
+
+    var panes = this.getPanes();
+    panes.floatPane.appendChild(div);
   }
 
-  
+  TxtOverlay.prototype.draw = function () {
+
+
+    var overlayProjection = this.getProjection();
+
+    // Retrieve the southwest and northeast coordinates of this overlay
+    // in latlngs and convert them to pixels coordinates.
+    // We'll use these coordinates to resize the DIV.
+    var position = overlayProjection.fromLatLngToDivPixel(this.pos);
+
+
+    var div = this.div_;
+    div.style.left = position.x + 'px';
+    div.style.top = position.y + 'px';
+
+
+
+  }
+
+  //Optional: helper methods for removing and toggling the text overlay.  
+  TxtOverlay.prototype.onRemove = function () {
+    this.div_.parentNode.removeChild(this.div_);
+    this.div_ = null;
+  }
+  TxtOverlay.prototype.hide = function () {
+    if (this.div_) {
+      this.div_.style.visibility = "hidden";
+    }
+  }
+
+  TxtOverlay.prototype.show = function () {
+    if (this.div_) {
+      this.div_.style.visibility = "visible";
+    }
+  }
+
+  TxtOverlay.prototype.toggle = function () {
+    if (this.div_) {
+      if (this.div_.style.visibility == "hidden") {
+        this.show();
+      } else {
+        this.hide();
+      }
+    }
+  }
+
+  TxtOverlay.prototype.toggleDOM = function () {
+    if (this.getMap()) {
+      this.setMap(null);
+    } else {
+      this.setMap(this.map_);
+    }
+  }
 }
