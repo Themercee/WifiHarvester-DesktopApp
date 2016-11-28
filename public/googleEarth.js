@@ -156,6 +156,7 @@ function getSignalAreaLow() {
   if(typeof lowWifiPoly !== 'undefined'){
     lowWifiPoly.setMap(null);
   }
+  
   getPointsPolygonStyle();
   lowWifiPoly.setMap(map);
 }
@@ -177,9 +178,17 @@ function getSignalAreaHigh() {
 }
 
 function clearPolygon() {
-  lowWifiPoly.setMap(null);
-  mediumWifiPoly.setMap(null);
-  highWifiPoly.setMap(null);
+  if(typeof lowWifiPoly != 'undefined'){
+    lowWifiPoly.setMap(null);
+  }
+
+  if(typeof mediumWifiPoly != 'undefined'){
+    mediumWifiPoly.setMap(null);
+  }
+  
+  if(typeof highWifiPoly != 'undefined'){
+    highWifiPoly.setMap(null);
+  }
 }
 
 /*************************************
@@ -287,6 +296,8 @@ function getPointsPolygonStyle() {
       }
     }
   }, this);
+
+  clearPolygon();
 
   lowWifiPoly = new google.maps.Polygon({
     paths: lowSignal,
