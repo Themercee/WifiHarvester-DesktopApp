@@ -58,12 +58,13 @@ function getDataInfoOnClick(e) {
 
 // Event from google maps
 function addDataOnClick(e) {
-  wifiGCList.push(new wifiGC(e.latLng.lat(), e.latLng.lng(), 20, ""));
+  wifiGCList.push(new WifiGooCoord(e.latLng.lat(), e.latLng.lng(), 5, getSSIDFilter() ));
   heatmap.setData(wifiGCList);
 }
 
 function delDataOnClick(e) {
   var pointToDelete = getNearestPoint(e);
+  var ssidFilter = getSSIDFilter();
 
   var googleCoordUpdated = [];
 
@@ -71,8 +72,10 @@ function delDataOnClick(e) {
 
     // Update googleCoord data
     for (var i = 0; i < wifiGCList.length; i++) {
-      if (wifiGCList[i].location.lat() !== pointToDelete.lat &&
-        wifiGCList[i].location.lng() !== pointToDelete.lon) {
+      var notSameLat = ( wifiGCList[i].location.lat() !== pointToDelete.lat );
+      var notSameLng = ( wifiGCList[i].location.lng() !== pointToDelete.lon );
+
+      if ( notSameLat && notSameLng ) {
         googleCoordUpdated.push(wifiGCList[i]);
       }
     }
@@ -150,29 +153,33 @@ function toggleHeatmap() {
 }
 
 function getSignalAreaLow() {
-  if (typeof lowWifiPoly == 'undefined') getPointsPolygonStyle();
+  if(typeof lowWifiPoly !== 'undefined'){
+    lowWifiPoly.setMap(null);
+  }
+  getPointsPolygonStyle();
   lowWifiPoly.setMap(map);
 }
 
 function getSignalAreaMedium() {
-  if (typeof mediumWifiPoly == 'undefined') getPointsPolygonStyle();
+  if(typeof mediumWifiPoly !== 'undefined'){
+    mediumWifiPoly.setMap(null);
+  }
+  getPointsPolygonStyle();
   mediumWifiPoly.setMap(map);
 }
 
 function getSignalAreaHigh() {
-  if (typeof highWifiPoly == 'undefined') getPointsPolygonStyle();
+  if(typeof highWifiPoly !== 'undefined'){
+    highWifiPoly.setMap(null);
+  }
+  getPointsPolygonStyle();
   highWifiPoly.setMap(map);
 }
 
 function clearPolygon() {
-  if (typeof lowWifiPoly !== 'undefined' &&
-    typeof mediumWifiPoly !== 'undefined' &&
-    typeof highWifiPoly !== 'undefined') {
-    lowWifiPoly.setMap(null);
-    mediumWifiPoly.setMap(null);
-    highWifiPoly.setMap(null);
-  }
-
+  lowWifiPoly.setMap(null);
+  mediumWifiPoly.setMap(null);
+  highWifiPoly.setMap(null);
 }
 
 /*************************************
@@ -186,7 +193,7 @@ function WifiGooCoord(lat, lon, signal, ssid){
   this.ssid = ssid;
   this.location = new google.maps.LatLng(lat, lon);
   this.setWeight = function(factor){ return (this.signal * factor); };
-  this.weight = this.setWeight(20);
+  this.weight = this.setWeight(10);
   
 
   
@@ -233,6 +240,7 @@ function getPointsBySSID(ssidToFilter) {
   }, this);
 
   wifiGCList = googleCoorFiltered;
+  console.log(wifiGCList);
   return wifiGCList;
 }
 
@@ -265,9 +273,6 @@ function getPointsPolygonStyle() {
 
   wifiGCList.forEach(function (wgEntry, index) {
     if (wgEntry.ssid === ssidFilter || ssidFilter === allSSID) {
-      if(wgEntry.signal == 4){
-        console.log(wgEntry);
-      }
       if (wgEntry.signal >= 1 && wgEntry.signal < 3 && typeof wgEntry.lat != 'undefined' && typeof wgEntry.lon != 'undefined') {
         //set Low signal
         lowSignal.push({ lat: wgEntry.lat, lng: wgEntry.lon });
@@ -282,9 +287,6 @@ function getPointsPolygonStyle() {
       }
     }
   }, this);
-
-  console.log(highSignal);
-
 
   lowWifiPoly = new google.maps.Polygon({
     paths: lowSignal,
