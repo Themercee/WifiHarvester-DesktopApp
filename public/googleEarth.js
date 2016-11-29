@@ -153,42 +153,45 @@ function toggleHeatmap() {
 }
 
 function getSignalAreaLow() {
-  if(typeof lowWifiPoly !== 'undefined'){
-    lowWifiPoly.setMap(null);
+  if(!lowWifiPoly){
+    getPointsPolygonStyle();
   }
-  
-  getPointsPolygonStyle();
+
   lowWifiPoly.setMap(map);
 }
 
 function getSignalAreaMedium() {
-  if(typeof mediumWifiPoly !== 'undefined'){
-    mediumWifiPoly.setMap(null);
+  if(!mediumWifiPoly){
+    getPointsPolygonStyle();
   }
-  getPointsPolygonStyle();
+
   mediumWifiPoly.setMap(map);
 }
 
 function getSignalAreaHigh() {
-  if(typeof highWifiPoly !== 'undefined'){
-    highWifiPoly.setMap(null);
+  if(!highWifiPoly){
+    getPointsPolygonStyle();
   }
-  getPointsPolygonStyle();
+
   highWifiPoly.setMap(map);
 }
 
 function clearPolygon() {
-  if(typeof lowWifiPoly != 'undefined'){
+  if(lowWifiPoly){
     lowWifiPoly.setMap(null);
   }
 
-  if(typeof mediumWifiPoly != 'undefined'){
+  if(mediumWifiPoly){
     mediumWifiPoly.setMap(null);
   }
   
-  if(typeof highWifiPoly != 'undefined'){
+  if(highWifiPoly){
     highWifiPoly.setMap(null);
   }
+
+  lowWifiPoly = null;
+  mediumWifiPoly = null;
+  highWifiPoly = null;
 }
 
 /*************************************
