@@ -6,7 +6,8 @@ var allSSID = "all";
 var map, heatmap, data, wifiGCList, originalWifiGCList;
 var lowWifiPoly, mediumWifiPoly, highWifiPoly;
 
-var centerCoord = {lat: 46.81568063, lng: -71.20222946};
+var centerCoord = { lat: 46.81568063, lng: -71.20222946 };
+
 var ssidArray = [];
 
 var radius = 40;
@@ -53,36 +54,42 @@ function getDataInfoOnClick(e) {
   var pointToSeeInfo = getNearestPoint(e);
 
   customTxt = "<div>Lat: " + pointToSeeInfo.location.lat() + "<br />Lon: " + pointToSeeInfo.location.lng() + " </div>"
-  txt = new TxtOverlay(pointToSeeInfo.location, customTxt, "customBox", map)
+  txt = new TxtOverlay(pointToSeeInfo.location, customTxt, "customBox", map);
 }
 
 // Event from google maps
 function addDataOnClick(e) {
-  wifiGCList.push(new WifiGooCoord(e.latLng.lat(), e.latLng.lng(), 5, getSSIDFilter() ));
+  var signalStrenght = document.getElementById("signalStrenght").value;
+  wifiGCList.push(new WifiGooCoord(e.latLng.lat(), e.latLng.lng(), signalStrenght, getSSIDFilter()));
   heatmap.setData(wifiGCList);
 }
 
+/**
+ * The way of deleting coordinates is to add every data to an array,
+ * except all the points that have the same coordinates of the coordinates
+ * we want to delete. After set this array as new data in the heatmap.
+ */
 function delDataOnClick(e) {
   var pointToDelete = getNearestPoint(e);
-  var ssidFilter = getSSIDFilter();
-
   var googleCoordUpdated = [];
 
-  if (typeof pointToDelete !== 'undefined') {
+  if (!pointToDelete) return;
 
-    // Update googleCoord data
-    for (var i = 0; i < wifiGCList.length; i++) {
-      var notSameLat = ( wifiGCList[i].location.lat() !== pointToDelete.lat );
-      var notSameLng = ( wifiGCList[i].location.lng() !== pointToDelete.lon );
+  for (var i = 0; i < wifiGCList.length; i++) {
 
-      if ( notSameLat && notSameLng ) {
-        googleCoordUpdated.push(wifiGCList[i]);
-      }
+    var sameLat = (wifiGCList[i].location.lat() == pointToDelete.location.lat());
+    var sameLng = (wifiGCList[i].location.lng() == pointToDelete.location.lng());
+
+    var doNotAdd = (sameLat && sameLng) // sameLat && sameLng is the point to delete
+
+    if (!doNotAdd) {
+      googleCoordUpdated.push(wifiGCList[i]);
     }
-
-    wifiGCList = googleCoordUpdated;
-    heatmap.setData(wifiGCList);
   }
+
+  wifiGCList = googleCoordUpdated;
+  heatmap.setData(wifiGCList);
+
 }
 
 function getNearestPoint(e) {
@@ -112,7 +119,7 @@ function getNearestPoint(e) {
 
 function getSSIDFilter() {
   var ssid = document.getElementById("ssidTextBox").value;
-  
+
   return (ssid === "" ? allSSID : ssid);
 }
 
@@ -121,22 +128,53 @@ function getClickAction() {
 }
 
 function changeGradient() {
-  var gradient = [
+  /*var gradient = [
     'rgba(255, 0, 0, 0)',
-    'rgba(245, 10, 0, 1)',
-    'rgba(235, 20, 0, 1)',
-    'rgba(225, 30, 0, 1)',
-    'rgba(215, 40, 0, 1)',
-    'rgba(195, 60, 0, 1)',
-    'rgba(175, 80, 0, 1)',
-    'rgba(155, 100, 0, 1)',
-    'rgba(135, 120, 0, 1)',
-    'rgba(115, 140, 0, 1)',
-    'rgba(95, 160, 0, 1)',
-    'rgba(75, 180, 0, 1)',
-    'rgba(64, 191, 0, 1)',
+    'rgba(255, 20, 0, 1)',
+    'rgba(255, 40, 0, 1)',
+    'rgba(255, 60, 0, 1)',
+    'rgba(255, 80, 0, 1)',
+    'rgba(255, 100, 0, 1)',
+    'rgba(255, 120, 0, 1)',
+    'rgba(255, 140, 0, 1)',
+    'rgba(255, 160, 0, 1)',
+    'rgba(255, 180, 0, 1)',
+    'rgba(255, 200, 0, 1)',
+    'rgba(255, 220, 0, 1)',
+    'rgba(255, 255, 0, 1)',
+    'rgba(240, 255, 0, 1)',
+    'rgba(220, 255, 0, 1)',
+    'rgba(200, 255, 0, 1)',
+    'rgba(180, 255, 0, 1)',
+    'rgba(160, 255, 0, 1)',
+    'rgba(140, 255, 0, 1)',
+    'rgba(120, 255, 0, 1)',
+    'rgba(100, 255, 0, 1)',
+    'rgba(80, 255, 0, 1)',
+    'rgba(60, 255, 0, 1)',
+    'rgba(40, 255, 0, 1)',
+    'rgba(20, 255, 0, 1)',
     'rgba(0, 255, 0, 1)'
-  ]
+  ]*/
+
+  var gradient = ['rgba(255, 0, 0, 0)'];
+  var opacity = 0.10;
+
+  for (var i = 0; i <= 255; i++) {
+    if (i % 10 == 0 && opacity != 1) {
+      opacity += 0.10;
+    }
+
+
+    var color = 'rgba(255,' + i + ',0,' + opacity + ')';
+    gradient.push(color);
+  }
+
+  for (var i = 255; i >= 0; i--) {
+    var color = 'rgba(' + i + ',255,0,1)';
+    gradient.push(color);
+  }
+
   heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
 }
 
@@ -153,7 +191,7 @@ function toggleHeatmap() {
 }
 
 function getSignalAreaLow() {
-  if(!lowWifiPoly){
+  if (!lowWifiPoly) {
     getPointsPolygonStyle();
   }
 
@@ -161,7 +199,7 @@ function getSignalAreaLow() {
 }
 
 function getSignalAreaMedium() {
-  if(!mediumWifiPoly){
+  if (!mediumWifiPoly) {
     getPointsPolygonStyle();
   }
 
@@ -169,7 +207,7 @@ function getSignalAreaMedium() {
 }
 
 function getSignalAreaHigh() {
-  if(!highWifiPoly){
+  if (!highWifiPoly) {
     getPointsPolygonStyle();
   }
 
@@ -177,15 +215,15 @@ function getSignalAreaHigh() {
 }
 
 function clearPolygon() {
-  if(lowWifiPoly){
+  if (lowWifiPoly) {
     lowWifiPoly.setMap(null);
   }
 
-  if(mediumWifiPoly){
+  if (mediumWifiPoly) {
     mediumWifiPoly.setMap(null);
   }
-  
-  if(highWifiPoly){
+
+  if (highWifiPoly) {
     highWifiPoly.setMap(null);
   }
 
@@ -198,17 +236,17 @@ function clearPolygon() {
  * FUNCTION RELATED TO LOADING OF DATA
  ************************************/
 
-function WifiGooCoord(lat, lon, signal, ssid){
+function WifiGooCoord(lat, lon, signal, ssid) {
   this.lat = lat;
   this.lon = lon;
   this.signal = signal;
   this.ssid = ssid;
   this.location = new google.maps.LatLng(lat, lon);
-  this.setWeight = function(factor){ return (this.signal * factor); };
-  this.weight = this.setWeight(10);
-  
+  this.setWeight = function (factor) { return (this.signal * factor); };
+  this.weight = this.setWeight(1);
 
-  
+
+
 }
 
 function initData() {
@@ -216,13 +254,10 @@ function initData() {
   data = ipcRenderer.sendSync('getCoord');
 
   wifiGCList = [];
-  
+
   data.forEach(function (gpsEntry) {
-    if(gpsEntry.SSID === "Palace Royal Chambres" && gpsEntry.Signal == 4){
-      console.log(gpsEntry);
-    }
     if (typeof gpsEntry.Lat != 'undefined' && typeof gpsEntry.Lon != 'undefined' && gpsEntry.Signal > 0) {
-      wifiGCList.push( new WifiGooCoord(gpsEntry.Lat, gpsEntry.Lon, gpsEntry.Signal, gpsEntry.SSID));
+      wifiGCList.push(new WifiGooCoord(gpsEntry.Lat, gpsEntry.Lon, gpsEntry.Signal, gpsEntry.SSID));
 
       addSSID(gpsEntry.SSID);
     }
@@ -239,15 +274,11 @@ function initData() {
 function getPointsBySSID(ssidToFilter) {
   var googleCoorFiltered = [];
 
-  if(ssidToFilter === allSSID) return originalWifiGCList;
+  if (ssidToFilter === allSSID) return originalWifiGCList;
 
   originalWifiGCList.forEach(function (wifiGC) {
-    if(wifiGC.ssid === "Palace Royal Chambres" && wifiGC.signal == 4){
-      console.log(wifiGC);
-    }
-
     if ((ssidToFilter === allSSID || ssidToFilter === wifiGC.ssid) && typeof wifiGC.lat != 'undefined' && typeof wifiGC.lon != 'undefined' && wifiGC.signal > 0) {
-      googleCoorFiltered.push( new WifiGooCoord(wifiGC.lat, wifiGC.lon, wifiGC.signal, wifiGC.ssid));
+      googleCoorFiltered.push(new WifiGooCoord(wifiGC.lat, wifiGC.lon, wifiGC.signal, wifiGC.ssid));
     }
   }, this);
 
