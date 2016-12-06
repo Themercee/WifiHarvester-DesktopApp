@@ -45,7 +45,7 @@
   </div>
 
   <div id="floating-panel-right">
-    <div class="">
+    <div id="signalArea" class="">
       <div class="col_12">
         <h5>Signal Area</h5>
       </div>
@@ -53,14 +53,29 @@
       <div class="col_4"><button onclick="getSignalAreaMedium()">medium</button></div>
       <div class="col_4"><button onclick="getSignalAreaHigh()">high</button></div>
 
-
     </div>
     <hr />
+    
+    <div class="col_12">
+      <h5>Add Data Parameters</h5>
+      <p>
+        <label>Signal Strenght: </label>
+        <select id="signalStrenght">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </p>
+
+    </div>
+
   </div>
     
   <div id="map"></div>
   <script src="googleEarth.js"></script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdr1ttTvlEWslNTJK3Zg2vps_wcJLSv0Y&signed_in=true&libraries=visualization,geometry&callback=initMap">
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&signed_in=true&libraries=visualization,geometry&callback=initMap">
     </script>
 </body>
 
