@@ -92,6 +92,16 @@ function delDataOnClick(e) {
 
 }
 
+function compareData(e){
+  ipcRenderer.sendSync('compareData');
+}
+
+function mergeScan(e){
+  var wifiArray = ipcRenderer.sendSync('getResultFromMergingMultipleScan');
+  console.log("WifiArray length: " + wifiArray.length);
+  initData(wifiArray);
+}
+
 function getNearestPoint(e) {
   var index = -1;
   var minDistance;
@@ -249,9 +259,15 @@ function WifiGooCoord(lat, lon, signal, ssid) {
 
 }
 
-function initData() {
+function initData(wifiArray) {
   //Query data
-  data = ipcRenderer.sendSync('getCoord');
+  var data;
+  if(wifiArray){
+    data = wifiArray;
+    console.log("Data already acquire.");
+  }else{
+    data = ipcRenderer.sendSync('getCoord');
+  }
 
   wifiGCList = [];
 
@@ -287,7 +303,12 @@ function getPointsBySSID(ssidToFilter) {
   return wifiGCList;
 }
 
+function getPointsByMacAdress(macToFilter){
+  //TODO
+}
+
 function filterSSID() {
+  //var re = /^(([A-Fa-f0-9]{2}[:]){5}[A-Fa-f0-9]{2}[,]?)+$/
   var ssid = getSSIDFilter();
   heatmap.setData(getPointsBySSID(ssid));
 };

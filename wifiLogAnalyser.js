@@ -42,7 +42,13 @@ function uniqueList(gpsPointsArray) {
         var elementFind = false;
 
         pointsList.forEach(function (uniqEntry, index) {
-            if (uniqEntry.SSID === originEntry.SSID &&
+            //Check for hidden network
+            if(originEntry.SSID == "" && originEntry.BSSID == uniqEntry.BSSID){
+                elementFind = true;
+                pointsList[index].number += 1;
+                pointsList[index].Signal += originEntry.Signal;
+            }
+            else if(uniqEntry.SSID === originEntry.SSID &&
                 uniqEntry.Lat === originEntry.Lat &&
                 uniqEntry.Lon === originEntry.Lon) {
                 elementFind = true;
